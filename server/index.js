@@ -4,7 +4,6 @@ const cors = require('cors'); // When you are using your own api in frontend and
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
-
 const app = express();
 
 app.use(express.json());
@@ -127,10 +126,11 @@ app.put('/update_location', (req, res) => {
 app.post('/addItem', (req, res) => {
   const itemName = req.body.itemName;
   const itemPrice = req.body.itemPrice;
+  const itemType = req.body.itemType;
   const status = 1;
   db.query(
-    'INSERT INTO menu (name, price, status) VALUES (?, ?, ?)',
-    [itemName, itemPrice, status],
+    'INSERT INTO menu (name, item_type, price, status) VALUES (?, ?, ?, ?)',
+    [itemName, itemType, itemPrice, status],
     (err, result) => {
       if (err) {
         console.log(err);
@@ -156,7 +156,7 @@ app.get('/getItem', (req, res) => {
 
 app.put('/deleteItem', (req, res) => {
   const id = req.body.id;
-  const status = req.body.status;
+  const status = req.body.statusUpdate;
   db.query(
     'UPDATE menu SET status = ? WHERE id = ?',
     [status, id],
@@ -173,13 +173,14 @@ app.put('/deleteItem', (req, res) => {
 app.post('/addOrderCustomer', (req, res) => {
   const customerId = req.body.customerId;
   const location = req.body.location;
-  const itemId = req.body.itemId;
-  const qty = req.body.quantity;
+  const orderList = req.body.orderList;
   const total = req.body.price;
   const status = 1;
+  const payment_status = 1;
+  const orderId = req.body.orderId;
   db.query(
-    'INSERT INTO orders (customerID, location, itemId, qty, total, status) VALUES (?, ?, ?, ?, ? ,?)',
-    [customerId, location, itemId, qty, qty * total, status],
+    'INSERT INTO orders (customerID, location, orderList, total, status, payment_status, orderId) VALUES (?, ?, ?, ?, ? ,?, ?)',
+    [customerId, location, orderList, total, status, payment_status, orderId],
     (err, result) => {
       if (err) {
         console.log(err);
@@ -190,12 +191,13 @@ app.post('/addOrderCustomer', (req, res) => {
   );
 });
 
-app.post('/getItemByCustomer', (req, res) => {
-  const location = req.body.location;
-  const userId = req.body.userId;
+app.put('/updatePayment', (req, res) => {
+  const orderId = req.body.orderId;
+  const paymentType = req.body.paymentType;
+  const payment_status = 2;
   db.query(
-    'SELECT orders.id, orders.location, menu.name, orders.qty, orders.total, orders.status FROM orders RIGHT JOIN menu ON orders.itemId = menu.id WHERE orders.location = ? AND orders.customerID = ? ORDER BY orders.id DESC',
-    [location, userId],
+    'UPDATE orders SET payment_status = ? ,payment_type = ? WHERE orderId = ?',
+    [payment_status, paymentType, orderId],
     (err, result) => {
       if (err) {
         console.log(err);
@@ -206,17 +208,89 @@ app.post('/getItemByCustomer', (req, res) => {
   );
 });
 
-app.get('/getAllOrder', (req, res) => {
+app.post('/getItemByCustomer', (req, res) => {
+  const location = req.body.location;
+  const orderId = req.body.orderId;
+  // db.query(
+  //   'SELECT * from orders WHERE orderId = ? AND location = ? AND payment_status = ?',
+  //   [orderId, location, 2],
+  //   (err, result) => {
+  //     if (err) {
+  //       console.log(err);
+  //     } else {
+  //       let resultArr = [];
+  //       resultArr[0] = result;
+  //       resultArr[1] = result[0].orderList;
+  //       res.send(resultArr);
+  //     }
+  //   }
+  // );
   db.query(
-    'SELECT orders.id, orders.location, menu.name, orders.qty, orders.total, orders.status FROM orders RIGHT JOIN menu ON orders.itemId = menu.id WHERE orders.status != 3 ORDER BY orders.id DESC',
+    'SELECT location, orderList, total, status, payment_type, payment_status, orderId from orders WHERE orderId = ? AND location = ? AND payment_status = ?',
+    [orderId, location, 2],
     (err, result) => {
       if (err) {
         console.log(err);
       } else {
         res.send(result);
+        //  let resultArr = [];
+        //  resultArr[0] = result;
+        //  resultArr[1] = result[0].orderList;
+        //  res.send(resultArr);
       }
     }
   );
+  // db.query(
+  //   'SELECT orders.id, orders.location, menu.name, orders.qty, orders.total, orders.status FROM orders RIGHT JOIN menu ON orders.itemId = menu.id WHERE orders.location = ? AND orders.orderId = ? ORDER BY orders.id DESC',
+  //   [location, orderId],
+  //   (err, result) => {
+  //     if (err) {
+  //       console.log(err);
+  //     } else {
+  //       res.send(result);
+  //       console.log(result);
+  //     }
+  //   }
+  // );
+});
+
+app.get('/getAllOrder', (req, res) => {
+  db.query(
+    'SELECT id, location, total, status, orderList, orderId, payment_type, payment_status FROM orders  WHERE status != 3 ORDER BY id DESC',
+    (err, result) => {
+      if (err) {
+        console.log(err);
+      } else {
+         res.send(result);
+        // console.log(result);
+      }
+    }
+  );
+  // db.query(
+  //   'SELECT location, orderList, total, status, payment_type, payment_status, orderId from orders WHERE orderId = ? AND location = ? AND payment_status = ?',
+  //   [orderId, location, 2],
+  //   (err, result) => {
+  //     if (err) {
+  //       console.log(err);
+  //     } else {
+  //       res.send(result);
+  //       //  let resultArr = [];
+  //       //  resultArr[0] = result;
+  //       //  resultArr[1] = result[0].orderList;
+  //       //  res.send(resultArr);
+  //     }
+  //   }
+  // );
+  // db.query(
+  //   'SELECT orders.id, orders.location, menu.name, orders.qty, orders.total, orders.status FROM orders RIGHT JOIN menu ON orders.itemId = menu.id WHERE orders.status != 3 ORDER BY orders.id DESC',
+  //   (err, result) => {
+  //     if (err) {
+  //       console.log(err);
+  //     } else {
+  //       res.send(result);
+  //     }
+  //   }
+  // );
 });
 
 app.put('/updateStatus', (req, res) => {

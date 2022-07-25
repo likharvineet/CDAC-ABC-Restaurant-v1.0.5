@@ -1,9 +1,13 @@
 import { useState, useEffect } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import Axios from 'axios';
+import ItemCard from '../components/ItemCard';
+import { useNavigate } from 'react-router-dom';
 const Menu = () => {
+  const navigate = useNavigate();
   const location = localStorage.getItem('location');
   const userId = localStorage.getItem('id');
-  const [quantity, setQuantity] = useState(0);
+  const [totalPrice, setTotalPrice] = useState(0);
   const [itemList, setItemList] = useState([]);
   useEffect(() => {
     Axios.get('http://localhost:3001/getItem').then((response) => {
@@ -11,64 +15,48 @@ const Menu = () => {
     });
   }, []);
 
-  const orderItem = (props) => {
-    const [id, price, quantity] = props;
+  const toCheckOut = () => {
+    const orderId = uuidv4();
     Axios.post('http://localhost:3001/addOrderCustomer', {
       customerId: userId,
       location: location,
-      itemId: id,
-      price: price,
-      quantity: quantity,
+      orderList: JSON.stringify(cart),
+      price: totalPrice,
+      orderId: orderId,
     }).then(() => {
       console.log('Menu Added');
+      localStorage.setItem('orderList', JSON.stringify(cart));
+      localStorage.setItem('totalPrice', totalPrice);
+      localStorage.setItem('orderId', orderId);
+      navigate('/checkout');
     });
   };
+  const [cart, setCart] = useState([]);
+  const handleClick = (item, quantity) => {
+    item.quantity = parseInt(quantity);
+
+    if (!cart.find((obj) => obj.id === item.id)) {
+      setTotalPrice(item.price * item.quantity + totalPrice);
+      setCart([...cart, item]);
+    }
+  };
   return (
-    <div className='container-fluid'>
-      <div>ABC Restaurant, {location}</div>
-      <div>
-        <table className='table table-bordered'>
-          <thead>
-            <tr>
-              <th scope='col'>#</th>
-              <th scope='col'>Name</th>
-              <th scope='col'>Price</th>
-              <th scope='col'>Qty</th>
-              <th scope='col'>Delete</th>
-            </tr>
-          </thead>
-          <tbody>
-            {itemList.map((val, key) => {
-              return (
-                <tr key={val.id}>
-                  <th scope='row'>{key + 1}</th>
-                  <td>{val.name}</td>
-                  <td>{val.price}</td>
-                  <td>
-                    <input
-                      type='number'
-                      min='0'
-                      onChange={(e) => {
-                        setQuantity(e.target.value);
-                      }}
-                    />
-                  </td>
-                  <td>
-                    <button
-                      type='button'
-                      className='btn btn-outline-danger'
-                      onClick={() => orderItem([val.id, val.price, quantity])}
-                    >
-                      Add
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <>
+      <h1 className='text-center mt-3'>All Items of {location}</h1>
+      <section className='py-4 container'>
+        <div className='row justify-content-center'>
+          {itemList.map((item) => {
+            return (
+              <ItemCard key={item.id} item={item} handleClick={handleClick} />
+            );
+          })}
+        </div>
+        <button className='btn btn-outline-primary' onClick={toCheckOut}>
+          Place Order of Amount : &#8377;{totalPrice}
+        </button>
+        {console.log(JSON.stringify(cart))}
+      </section>
+    </>
   );
 };
 export default Menu;

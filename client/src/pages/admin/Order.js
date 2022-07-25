@@ -24,7 +24,7 @@ const Order = () => {
             <th scope='col'>#</th>
             <th scope='col'>Location</th>
             <th scope='col'>Name</th>
-            <th scope='col'>Qty</th>
+            <th scope='col'>Payment Mode</th>
             <th scope='col'>Price</th>
             <th scope='col'>Status</th>
           </tr>
@@ -35,8 +35,27 @@ const Order = () => {
               <tr key={val.id}>
                 <th scope='row'>{key + 1}</th>
                 <td>{val.location}</td>
-                <td>{val.name}</td>
-                <td>{val.qty}</td>
+                {/* <td>{val.orderList}</td> */}
+                <td>
+                  {JSON.parse(val.orderList).map((item) => {
+                    return (
+                      <tr key={item.id}>
+                        <td>{item.name}</td>
+                        <td>({item.quantity})</td>
+                      </tr>
+                    );
+                  })}
+                </td>
+                <td>
+                  {(() => {
+                    if (val.payment_type === 1) {
+                      return <span> Cash</span>;
+                    }
+                    if (val.payment_type === 2) {
+                      return <span> Card</span>;
+                    }
+                  })()}
+                </td>
                 <td>{val.total}</td>
                 <td>
                   {(() => {

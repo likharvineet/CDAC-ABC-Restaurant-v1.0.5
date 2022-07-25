@@ -8,6 +8,8 @@ import Registration from './pages/Registration';
 import ProtectedRoute from './components/ProtectedRoute';
 import Logout from './pages/Logout';
 import Admin from './pages/admin/Admin';
+import Checkout from './pages/Checkout';
+import Payment from './pages/Payment';
 
 function App() {
   return (
@@ -30,6 +32,16 @@ function App() {
           exact
           path='/menu'
           element={<ProtectedRoute Component={Menu} />}
+        />
+        <Route
+          exact
+          path='/checkout'
+          element={<ProtectedRoute Component={Checkout} />}
+        />
+        <Route
+          exact
+          path='/payment'
+          element={<ProtectedRoute Component={Payment} />}
         />
         <Route path='/admin/*' element={<Admin />} />
       </Routes>
